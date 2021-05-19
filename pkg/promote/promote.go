@@ -906,14 +906,15 @@ func (o *Options) waitForGitOpsPullRequest(ns string, env *jxcore.EnvironmentCon
 				log.Logger().Warnf("failed to find PR %s %d: %s", fullName, prNumber, err.Error())
 			} else {
 				if pr.Merged {
-					if pr.MergeSha == "" {
+					// BitBucket do not return mergesha
+					if scmClient.Driver != scm.DriverStash && pr.MergeSha == "" {
 						if !logNoMergeCommitSha {
 							logNoMergeCommitSha = true
 							log.Logger().Infof("Pull Request %s is merged but waiting for Merge SHA", termcolor.ColorInfo(pr.Link))
 						}
 					} else {
 						mergeSha := pr.MergeSha
-						if !logHasMergeSha {
+						if scmClient.Driver != scm.DriverStash && !logHasMergeSha {
 							logHasMergeSha = true
 							log.Logger().Infof("Pull Request %s is merged at sha %s", termcolor.ColorInfo(pr.Link), termcolor.ColorInfo(mergeSha))
 
@@ -991,7 +992,7 @@ func (o *Options) waitForGitOpsPullRequest(ns string, env *jxcore.EnvironmentCon
 						}
 					}
 				}
-				if !pr.Mergeable {
+				if scmClient.Driver != scm.DriverStash && !pr.Mergeable {
 					log.Logger().Info("Rebasing PullRequest due to conflict")
 
 					err = o.PromoteViaPullRequest([]*jxcore.EnvironmentConfig{env}, releaseInfo, false)
